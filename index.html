@@ -1,135 +1,138 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sax-AI - Assistente Completo</title>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <style>
-    :root { --bg: #0f172a; --card: #1e293b; --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
-    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
-    body { margin: 0; background: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; }
-    header { padding: 15px 20px; background: var(--card); border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
-    header h1 { margin: 0; font-size: 1.3rem; background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; max-width: 900px; width: 100%; margin: 0 auto; }
-    .msg { padding: 14px 18px; border-radius: 14px; max-width: 85%; line-height: 1.5; word-wrap: break-word; }
-    .user { background: var(--accent); align-self: flex-end; border-bottom-right-radius: 4px; }
-    .ai { background: var(--card); align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #334155; width: 100%; }
-    .ai pre { background: #020617; padding: 12px; border-radius: 8px; overflow-x: auto; border: 1px solid #334155; }
-    .ai img { max-width: 100%; border-radius: 10px; margin-top: 10px; }
-    .slide-deck { display: flex; overflow-x: auto; gap: 15px; padding: 10px 0; scroll-snap-type: x mandatory; }
-    .slide { min-width: 280px; background: #0f172a; border: 1px solid #3b82f6; border-radius: 10px; padding: 15px; scroll-snap-align: start; }
-    iframe.video-frame { width: 100%; height: 320px; border: none; border-radius: 10px; background: #000; margin-top: 10px; }
-    .controls { background: var(--card); padding: 15px; border-top: 1px solid #334155; }
-    .modes { display: flex; gap: 8px; max-width: 900px; margin: 0 auto 10px auto; flex-wrap: wrap; }
-    .mode-btn { background: #0f172a; color: var(--muted); border: 1px solid #334155; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; }
-    .mode-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-    .input-row { display: flex; gap: 10px; max-width: 900px; margin: 0 auto; }
-    input { flex: 1; padding: 12px 16px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 1rem; outline: none; }
-    button#send-btn { background: var(--accent); color: white; border: none; padding: 0 22px; border-radius: 10px; font-weight: bold; cursor: pointer; }
-    button#send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAX-AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;900&family=Manrope:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07041a;--mag:#ff2e93;--cya:#22e1ff;--amb:#ffb000;--ink:#f4f0ff;--glass:rgba(18,10,46,.62)}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.6 Manrope,sans-serif;min-height:100vh;padding:clamp(16px,4vw,48px)}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:-1}
+main{max-width:860px;margin:0 auto}
+h1{font:900 clamp(56px,16vw,168px)/.9 Unbounded,sans-serif;letter-spacing:-.04em;text-shadow:-.04em 0 var(--cya),.04em 0 var(--mag);animation:glitch 1.4s steps(1) 1}
+@keyframes glitch{0%,30%{text-shadow:-.18em .03em var(--cya),.18em -.03em var(--mag);transform:skewX(-8deg)}35%,60%{text-shadow:.1em 0 var(--amb),-.1em 0 var(--cya);transform:none}65%,100%{text-shadow:-.04em 0 var(--cya),.04em 0 var(--mag)}}
+.sub{margin:18px 0 32px;max-width:46ch;opacity:.85}
+nav{display:flex;gap:8px;margin-bottom:12px}
+nav button{font:500 14px Unbounded,sans-serif;color:var(--ink);background:transparent;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:10px 20px;cursor:pointer;transition:.2s}
+nav button[aria-selected=true]{background:linear-gradient(90deg,var(--mag),var(--amb));border-color:transparent;color:#1a0620}
+button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--cya);outline-offset:2px}
+section{display:none;background:var(--glass);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.16);border-radius:28px;padding:24px;box-shadow:0 0 80px rgba(255,46,147,.18)}
+section.on{display:block}
+#log{max-height:46vh;overflow:auto;display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+.msg{padding:12px 16px;border-radius:18px;max-width:85%;white-space:pre-wrap}
+.me{align-self:flex-end;background:rgba(34,225,255,.16);border:1px solid rgba(34,225,255,.4)}
+.ai{align-self:flex-start;background:rgba(255,46,147,.14);border:1px solid rgba(255,46,147,.4)}
+.row{display:flex;gap:10px}
+textarea{flex:1;min-height:56px;resize:vertical;font:inherit;color:var(--ink);background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:14px}
+.go{font:500 14px Unbounded,sans-serif;border:0;border-radius:16px;padding:0 26px;color:#1a0620;cursor:pointer;background:linear-gradient(90deg,var(--cya),var(--mag));transition:transform .15s,box-shadow .15s}
+.go:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(255,46,147,.5)}
+.go:disabled{opacity:.5;cursor:wait}
+.out{margin-top:18px}
+.out img,.out video{width:100%;border-radius:20px;display:block}
+.err{color:#ff8fb8;margin-top:12px}
+.spin{height:4px;border-radius:4px;background:linear-gradient(90deg,var(--mag),var(--cya),var(--amb),var(--mag));background-size:300% 100%;animation:sl 1s linear infinite}
+@keyframes sl{to{background-position:300% 0}}
+@media(prefers-reduced-motion:reduce){h1,.spin{animation:none}}
+</style>
 </head>
 <body>
+<canvas id="bg"></canvas>
+<main>
+  <h1>SAX-AI</h1>
+  <p class="sub">Fai una domanda, crea un’immagine, genera un video. Tutto da qui.</p>
+  <nav role="tablist">
+    <button role="tab" aria-selected="true" data-t="chat">Chiedi</button>
+    <button role="tab" aria-selected="false" data-t="img">Immagine</button>
+    <button role="tab" aria-selected="false" data-t="vid">Video</button>
+  </nav>
 
-<header>
-  <h1>✦ Sax-AI</h1>
-  <span style="font-size: 0.85rem; color: var(--muted);">Chat • Codice • Immagini • Slide • Animazioni</span>
-</header>
+  <section id="chat" class="on">
+    <div id="log" aria-live="polite"></div>
+    <div class="row"><textarea id="q" placeholder="Scrivi la tua domanda"></textarea><button class="go" id="send">Invia</button></div>
+  </section>
 
-<div id="chat-box">
-  <div class="msg ai">Ciao! Sono <strong>Sax-AI</strong>. Scegli una modalità qui sotto e chiedimi di scrivere testi, generare codice, creare immagini, preparare presentazioni o animazioni video!</div>
-</div>
+  <section id="img">
+    <div class="row"><textarea id="ip" placeholder="Descrivi l’immagine che vuoi"></textarea><button class="go" id="ig">Crea immagine</button></div>
+    <div class="out" id="io"></div>
+  </section>
 
-<div class="controls">
-  <div class="modes">
-    <button class="mode-btn active" data-mode="chat">💬 Chat & Codice</button>
-    <button class="mode-btn" data-mode="image">🎨 Immagine</button>
-    <button class="mode-btn" data-mode="presentation">📊 Presentazione</button>
-    <button class="mode-btn" data-mode="video">🎬 Video Animato</button>
-  </div>
-  <div class="input-row">
-    <input type="text" id="prompt-input" placeholder="Scrivi qui la tua richiesta..." />
-    <button id="send-btn">Invia</button>
-  </div>
-</div>
+  <section id="vid">
+    <div class="row"><textarea id="vp" placeholder="Descrivi la scena del video"></textarea><button class="go" id="vg">Crea video</button></div>
+    <div class="out" id="vo"></div>
+  </section>
+</main>
 
 <script>
-  const WORKER_URL = https://dash.cloudflare.com/d8d07b2fa989f1476ea6ee739c95effc/workers/services/view/sax-ai/production/builds/89ea970e-218e-45f3-bd72-739351fd5fff
-  let currentMode = "chat";
-  const chatBox = document.getElementById("chat-box");
-  const input = document.getElementById("prompt-input");
-  const sendBtn = document.getElementById("send-btn");
+/* Sfondo plasma WebGL, reagisce al mouse */
+(()=>{const c=document.getElementById('bg'),g=c.getContext('webgl');if(!g)return;
+const vs='attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
+const fs=`precision highp float;uniform vec2 r,m;uniform float t;
+vec3 pal(float x){return .5+.5*cos(6.2831*(x+vec3(0.,.33,.67)));}
+void main(){vec2 p=(gl_FragCoord.xy*2.-r)/min(r.x,r.y);vec2 q=(m*2.-r)/min(r.x,r.y);
+for(float i=1.;i<5.;i++){p+=vec2(sin(p.y*i*1.3+t*.4+q.x),cos(p.x*i*1.1-t*.3+q.y))/i;}
+float v=length(p);
+vec3 col=mix(vec3(.03,.015,.1),pal(v*.35+t*.05)*vec3(1.,.35,.9),.55*smoothstep(.2,1.6,abs(sin(v*2.))));
+gl_FragColor=vec4(col*.6,1.);}`;
+const sh=(t,s)=>{const o=g.createShader(t);g.shaderSource(o,s);g.compileShader(o);return o};
+const p=g.createProgram();g.attachShader(p,sh(g.VERTEX_SHADER,vs));g.attachShader(p,sh(g.FRAGMENT_SHADER,fs));g.linkProgram(p);g.useProgram(p);
+g.bindBuffer(g.ARRAY_BUFFER,g.createBuffer());g.bufferData(g.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),g.STATIC_DRAW);
+const a=g.getAttribLocation(p,'a');g.enableVertexAttribArray(a);g.vertexAttribPointer(a,2,g.FLOAT,false,0,0);
+const U=n=>g.getUniformLocation(p,n);let mx=0,my=0;
+const rs=()=>{c.width=innerWidth/2;c.height=innerHeight/2;g.viewport(0,0,c.width,c.height);mx=c.width/2;my=c.height/2};rs();addEventListener('resize',rs);
+addEventListener('pointermove',e=>{mx=e.clientX/2;my=(innerHeight-e.clientY)/2});
+const calm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const f=ts=>{g.uniform2f(U('r'),c.width,c.height);g.uniform2f(U('m'),mx,my);g.uniform1f(U('t'),calm?0:ts/1000);g.drawArrays(g.TRIANGLES,0,3);if(!calm)requestAnimationFrame(f)};requestAnimationFrame(f)})();
 
-  document.querySelectorAll(".mode-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      currentMode = btn.dataset.mode;
-    });
-  });
+/* UI */
+const $=s=>document.querySelector(s);
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id===b.dataset.t));
+});
+async function post(url,body){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.detail||'Qualcosa è andato storto');
+  return d;
+}
+const add=(cls,txt)=>{const d=document.createElement('div');d.className='msg '+cls;d.textContent=txt;$('#log').append(d);$('#log').scrollTop=1e9;return d};
 
-  function addMessage(html, sender) {
-    const div = document.createElement("div");
-    div.className = `msg ${sender}`;
-    div.innerHTML = html;
-    chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
-    return div;
-  }
+const hist=[];
+async function send(){
+  const q=$('#q').value.trim();if(!q)return;
+  $('#q').value='';add('me',q);hist.push({role:'user',content:q});
+  const w=add('ai','…');$('#send').disabled=true;
+  try{const d=await post('/api/chat',{messages:hist});w.textContent=d.text;hist.push({role:'assistant',content:d.text})}
+  catch(e){w.textContent=e.message;hist.pop()}
+  $('#send').disabled=false;
+}
+$('#send').onclick=send;
+$('#q').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
 
-  async function handleSend() {
-    const text = input.value.trim();
-    if (!text) return;
+$('#ig').onclick=async()=>{
+  const p=$('#ip').value.trim();if(!p)return;
+  $('#ig').disabled=true;$('#io').innerHTML='<div class="spin"></div>';
+  try{const d=await post('/api/image',{prompt:p});$('#io').innerHTML=`<img src="${d.url}" alt="Immagine generata">`}
+  catch(e){$('#io').innerHTML='<p class="err"></p>';$('#io .err').textContent=e.message}
+  $('#ig').disabled=false;
+};
 
-    addMessage(text, "user");
-    input.value = "";
-    sendBtn.disabled = true;
-
-    // Modalità Immagine gratuita istantanea tramite Pollinations
-    if (currentMode === "image") {
-      const seed = Math.floor(Math.random() * 100000);
-      const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(text)}?seed=${seed}&nologo=true`;
-      addMessage(`<p>Ecco l'immagine generata per: <em>"${text}"</em></p><img src="${imgUrl}" alt="Immagine AI" />`, "ai");
-      sendBtn.disabled = false;
-      return;
+$('#vg').onclick=async()=>{
+  const p=$('#vp').value.trim();if(!p)return;
+  $('#vg').disabled=true;$('#vo').innerHTML='<div class="spin"></div>';
+  try{
+    const {id}=await post('/api/video',{prompt:p});
+    for(;;){
+      await new Promise(r=>setTimeout(r,3000));
+      const s=await (await fetch('/api/status/'+id)).json();
+      if(s.status==='succeeded'){$('#vo').innerHTML=`<video src="${s.url}" controls autoplay loop playsinline></video>`;break}
+      if(s.status==='failed'||s.status==='canceled')throw new Error('Generazione video non riuscita');
     }
-
-    const loadingMsg = addMessage("Sto elaborando...", "ai");
-
-    try {
-      const res = await fetch(WORKER_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: text, mode: currentMode })
-      });
-      const data = await res.json();
-
-      if (data.error) {
-        loadingMsg.innerHTML = `⚠️ Errore: ${data.error}`;
-      } else if (currentMode === "presentation") {
-        const slides = data.reply.split("---SLIDE---").filter(s => s.trim());
-        const slidesHtml = slides.map(s => `<div class="slide">${marked.parse(s)}</div>`).join("");
-        loadingMsg.innerHTML = `<strong>Presentazione generata (scorri orizzontalmente):</strong><div class="slide-deck">${slidesHtml}</div>`;
-      } else if (currentMode === "video") {
-        const codeMatch = data.reply.match(/```html([\s\S]*?)```/);
-        const htmlCode = codeMatch ? codeMatch[1] : data.reply;
-        const blob = new Blob([htmlCode], { type: "text/html" });
-        const url = URL.createObjectURL(blob);
-        loadingMsg.innerHTML = `<strong>Animazione Video generata:</strong><iframe class="video-frame" src="${url}"></iframe>`;
-      } else {
-        loadingMsg.innerHTML = marked.parse(data.reply);
-      }
-    } catch (e) {
-      loadingMsg.innerHTML = `⚠️ Errore di connessione al Worker. Controlla di aver inserito l'URL giusto in index.html.`;
-    }
-
-    sendBtn.disabled = false;
-  }
-
-  sendBtn.addEventListener("click", handleSend);
-  input.addEventListener("keypress", e => { if (e.key === "Enter") handleSend(); });
+  }catch(e){$('#vo').innerHTML='<p class="err"></p>';$('#vo .err').textContent=e.message}
+  $('#vg').disabled=false;
+};
 </script>
-
 </body>
 </html>
