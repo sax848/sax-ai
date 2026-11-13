@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sax-AI - Assistente Completo</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root { --bg: #0f172a; --card: #1e293b; --accent: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; }
+    header { padding: 15px 20px; background: var(--card); border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 1.3rem; background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; max-width: 900px; width: 100%; margin: 0 auto; }
+    .msg { padding: 14px 18px; border-radius: 14px; max-width: 85%; line-height: 1.5; word-wrap: break-word; }
+    .user { background: var(--accent); align-self: flex-end; border-bottom-right-radius: 4px; }
+    .ai { background: var(--card); align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #334155; width: 100%; }
+    .ai pre { background: #020617; padding: 12px; border-radius: 8px; overflow-x: auto; border: 1px solid #334155; }
+    .ai img { max-width: 100%; border-radius: 10px; margin-top: 10px; }
+    .slide-deck { display: flex; overflow-x: auto; gap: 15px; padding: 10px 0; scroll-snap-type: x mandatory; }
+    .slide { min-width: 280px; background: #0f172a; border: 1px solid #3b82f6; border-radius: 10px; padding: 15px; scroll-snap-align: start; }
+    iframe.video-frame { width: 100%; height: 320px; border: none; border-radius: 10px; background: #000; margin-top: 10px; }
+    .controls { background: var(--card); padding: 15px; border-top: 1px solid #334155; }
+    .modes { display: flex; gap: 8px; max-width: 900px; margin: 0 auto 10px auto; flex-wrap: wrap; }
+    .mode-btn { background: #0f172a; color: var(--muted); border: 1px solid #334155; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; }
+    .mode-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .input-row { display: flex; gap: 10px; max-width: 900px; margin: 0 auto; }
+    input { flex: 1; padding: 12px 16px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 1rem; outline: none; }
+    button#send-btn { background: var(--accent); color: white; border: none; padding: 0 22px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+    button#send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>✦ Sax-AI</h1>
+  <span style="font-size: 0.85rem; color: var(--muted);">Chat • Codice • Immagini • Slide • Animazioni</span>
+</header>
+
+<div id="chat-box">
+  <div class="msg ai">Ciao! Sono <strong>Sax-AI</strong>. Scegli una modalità qui sotto e chiedimi di scrivere testi, generare codice, creare immagini, preparare presentazioni o animazioni video!</div>
+</div>
+
+<div class="controls">
+  <div class="modes">
+    <button class="mode-btn active" data-mode="chat">💬 Chat & Codice</button>
+    <button class="mode-btn" data-mode="image">🎨 Immagine</button>
+    <button class="mode-btn" data-mode="presentation">📊 Presentazione</button>
+    <button class="mode-btn" data-mode="video">🎬 Video Animato</button>
+  </div>
+  <div class="input-row">
+    <input type="text" id="prompt-input" placeholder="Scrivi qui la tua richiesta..." />
+    <button id="send-btn">Invia</button>
+  </div>
+</div>
+
+<script>
+  // SOSTITUISCI QUESTO URL CON QUELLO DEL TUO CLOUDFLARE WORKER!
+  const WORKER_URL = "https://sax-ai.INSERISCI-IL-TUO-SUBDOMAIN.workers.dev";
+
+  let currentMode = "chat";
+  const chatBox = document.getElementById("chat-box");
+  const input = document.getElementById("prompt-input");
+  const sendBtn = document.getElementById("send-btn");
+
+  document.querySelectorAll(".mode-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentMode = btn.dataset.mode;
+    });
+  });
+
+  function addMessage(html, sender) {
+    const div = document.createElement("div");
+    div.className = `msg ${sender}`;
+    div.innerHTML = html;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    return div;
+  }
+
+  async function handleSend() {
+    const text = input.value.trim();
+    if (!text) return;
+
+    addMessage(text, "user");
+    input.value = "";
+    sendBtn.disabled = true;
+
+    // Modalità Immagine gratuita istantanea tramite Pollinations
+    if (currentMode === "image") {
+      const seed = Math.floor(Math.random() * 100000);
+      const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(text)}?seed=${seed}&nologo=true`;
+      addMessage(`<p>Ecco l'immagine generata per: <em>"${text}"</em></p><img src="${imgUrl}" alt="Immagine AI" />`, "ai");
+      sendBtn.disabled = false;
+      return;
+    }
+
+    const loadingMsg = addMessage("Sto elaborando...", "ai");
+
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: text, mode: currentMode })
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        loadingMsg.innerHTML = `⚠️ Errore: ${data.error}`;
+      } else if (currentMode === "presentation") {
+        const slides = data.reply.split("---SLIDE---").filter(s => s.trim());
+        const slidesHtml = slides.map(s => `<div class="slide">${marked.parse(s)}</div>`).join("");
+        loadingMsg.innerHTML = `<strong>Presentazione generata (scorri orizzontalmente):</strong><div class="slide-deck">${slidesHtml}</div>`;
+      } else if (currentMode === "video") {
+        const codeMatch = data.reply.match(/```html([\s\S]*?)```/);
+        const htmlCode = codeMatch ? codeMatch[1] : data.reply;
+        const blob = new Blob([htmlCode], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+        loadingMsg.innerHTML = `<strong>Animazione Video generata:</strong><iframe class="video-frame" src="${url}"></iframe>`;
+      } else {
+        loadingMsg.innerHTML = marked.parse(data.reply);
+      }
+    } catch (e) {
+      loadingMsg.innerHTML = `⚠️ Errore di connessione al Worker. Controlla di aver inserito l'URL giusto in index.html.`;
+    }
+
+    sendBtn.disabled = false;
+  }
+
+  sendBtn.addEventListener("click", handleSend);
+  input.addEventListener("keypress", e => { if (e.key === "Enter") handleSend(); });
+</script>
+
+</body>
+</html>
