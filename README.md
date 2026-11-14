@@ -1,4 +1,4 @@
-# SAX-AI
+# SAID-AI
 
 Un’interfaccia dal look psichedelico (sfondo WebGL reattivo al mouse) che:
 
